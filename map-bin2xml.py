@@ -104,7 +104,7 @@ def parseFile(data):
     print(row)
 
 
-folder = "C:\\Users\\martin\\Documents\\uniwar\\android.uniwar\\files\\"
+folder = "./map.bin.files/"
 maps = glob.glob(folder + "map*.bin")
 
 for m in maps:
