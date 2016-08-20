@@ -39,7 +39,7 @@ tileLookup = {
 def parseFile(data):
     # read data into a struct
     #print (data)
-    print (len(data))
+    print ("Data size = " + str(len(data)))
 
     map_data = namedtuple('map_data', 'version I1 b1 b2 b3 b4 width height mission players start_credits base_credits')
     md = map_data._make(unpack('>IIBBBBHHHBIH', data[0:25]))
@@ -74,14 +74,14 @@ def parseFile(data):
 
     map_data3 = namedtuple('map_data3', 'rating1 s1 played up down userid2')
     md3 = map_data3._make(unpack('>HHHHHi', data[pos:pos + 14]))
-    pos = pos + 14
+    pos += 14
     print(md3)
     pos, username2 = exractString(data, pos)
     print("username2 = " + username2)
 
     map_data4 = namedtuple('map_data4', 'rating_int')
     md4 = map_data4._make(unpack('>I', data[pos:pos + 4]))
-    pos = pos + 4
+    pos += 4
     print(md4)
     pos, region2 = exractString(data, pos)
     print ("Region2 = %s" % region2)
@@ -92,15 +92,28 @@ def parseFile(data):
         row = ""
         for x in range(0, width):
             byte = pos + (x * height) + y
-            tile = tileLookup.get(data[byte], "?")
+            val = unpack('>b', data[byte])[0]
+            tile = tileLookup.get(val, "?")
             row += tile
         print(row)
     pos += (x * height) + y + 1
 
+    for p in range(1, md.players + 1):
+        base_data = namedtuple('base_data', 'bases')
+        bd = base_data._make(unpack('>H', data[pos:pos + 2]))
+        pos += 2
+        print("Player " + str(p) + " Bases/Ports: " + str(bd.bases))
+        for i in range(1, bd.bases + 1):
+            base_data2 = namedtuple('base_data2', 'x y b1')
+            bd2 = base_data2._make(unpack('>HHB', data[pos:pos + 5]))
+            pos += 5
+            print("Player " + str(p) + " Base " + str(i) + ": " + str(bd2))
+
     print("\n*** extra data *** " + str(len(data) - pos))
     row = ""
     for i in range(pos, len(data)):
-        row += str(data[i])
+        val = unpack('>B', data[i])[0]
+        row += str(val)
     print(row)
 
 
@@ -110,8 +123,8 @@ maps = glob.glob(folder + "map*.bin")
 for m in maps:
     f = open(m, 'rb')
     file_data = f.read()
-    if len(file_data) > 350:
-        continue
+#    if len(file_data) > 450:
+#        continue
     try:
         print ("\n*************\n" + m)
         parseFile(file_data)
