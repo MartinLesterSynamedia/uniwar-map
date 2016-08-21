@@ -6,21 +6,34 @@ from collections import namedtuple
 
 
 def exractString(data, pos):
-    length = unpack('>H', data[pos:pos + 2])
-    length = length[0]
-#    print("string length = " + str(length))
-    pos += 2
-    if length > 255:
-        text = "<Silly length>"
-    elif length > 0:
-        text = unpack('>' + str(length) + 's', data[pos:pos + length])
-        text = text[0]
-        text = text.decode()
+    try:
+        length = 0
+        length = unpack('>H', data[pos:pos + 2])
+        length = length[0]
+    #    print("string length = " + str(length))
+        pos += 2
+        if length > 255:
+            text = "<Silly length>"
+        elif length > 0:
+            text = unpack('>' + str(length) + 's', data[pos:pos + length])
+            text = text[0]
+            text = text.decode()
+            pos += length
+        else:
+            text = "<BLANK>"
+    #    print(str(text))
+    except Exception as e:
+        text = str(text)
         pos += length
-    else:
-        text = "<BLANK>"
-#    print(str(text))
     return pos, text
+
+tilesetLookup = {
+    0: "Plains",
+    1: "Ice",
+    2: "Mars",
+    3: "Volcano",
+    4: "Desert",
+}
 
 tileLookup = {
     0: ".",
@@ -73,15 +86,17 @@ def parseFile(data):
 
     print (md)
 
-    map_data2 = namedtuple('map_data2', 'b1 b2 map_id i1 userid1')
+    map_data2 = namedtuple('map_data2', 'b1 tile_set map_id i1 userid1')
     md2 = map_data2._make(unpack('>BBIii', data[pos:pos + 14]))
     pos += 14
     print(md2)
 
     pos, region1 = exractString(data, pos)
-    print ("Region1 = %s" % region1)
+    print ("Region1: %s" % region1)
     pos, username1 = exractString(data, pos)
-    print ("Username1 = %s" % username1)
+    print ("Username1: %s" % username1)
+
+    print ("Tile set: " + tilesetLookup.get(md2.tile_set, "** FIND OUT **"))
 
     map_data3 = namedtuple('map_data3', 'rating1 s1 played up down userid2')
     md3 = map_data3._make(unpack('>HHHHHi', data[pos:pos + 14]))
@@ -97,7 +112,7 @@ def parseFile(data):
     pos, region2 = exractString(data, pos)
     print ("Region2 = %s" % region2)
 
-    #### The rest is map data !!!
+    #### Map data
     print("*** map ***")
     for y in range(0, height):
         row = ""
@@ -126,12 +141,13 @@ def parseFile(data):
         unit_data._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
 
+    ## Unit data
     for p in range(1, md.players + 1):
         unit_data3 = namedtuple('unit_data3', 'unit_types')
         ud3 = unit_data3._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
         print("Player " + str(p) + " " + str(ud3))
-        for i in range(1, ud3.unit_types + 1):
+        for u in range(1, ud3.unit_types + 1):
             unit_data1 = namedtuple('unit_data1', 'unit_type units')
             ud1 = unit_data1._make(unpack('>HH', data[pos:pos + 4]))
             pos += 4
