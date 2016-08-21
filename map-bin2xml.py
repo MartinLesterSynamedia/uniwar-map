@@ -35,6 +35,17 @@ tileLookup = {
     9: "+",
 }
 
+unitLookup = {
+    1: "Basic",
+    2: "Medic",
+    3: "Range",
+    4: "Tank",
+    5: "Light",
+    6: "Boat",
+    7: "Medium",
+    8: "Converted",
+}
+
 
 def parseFile(data):
     # read data into a struct
@@ -108,6 +119,29 @@ def parseFile(data):
             bd2 = base_data2._make(unpack('>HHB', data[pos:pos + 5]))
             pos += 5
             print("Player " + str(p) + " Base " + str(i) + ": " + str(bd2))
+
+    ## Remove some random padding depending on number of players
+    for p in range(0, 8 - md.players):
+        unit_data = namedtuple('unit_data', 'S1')
+        unit_data._make(unpack('>H', data[pos:pos + 2]))
+        pos += 2
+
+    for p in range(1, md.players + 1):
+        unit_data3 = namedtuple('unit_data3', 'unit_types')
+        ud3 = unit_data3._make(unpack('>H', data[pos:pos + 2]))
+        pos += 2
+        print("Player " + str(p) + " " + str(ud3))
+        for i in range(1, ud3.unit_types + 1):
+            unit_data1 = namedtuple('unit_data1', 'unit_type units')
+            ud1 = unit_data1._make(unpack('>HH', data[pos:pos + 4]))
+            pos += 4
+            print("Player " + str(p) + " " + str(ud1))
+            unit_name = unitLookup.get(ud1.unit_type, "ERROR")
+            for i in range(1, ud1.units + 1):
+                unit_data2 = namedtuple('unit_data2', 'x y b1')
+                ud2 = unit_data2._make(unpack('>HHB', data[pos:pos + 5]))
+                pos += 5
+                print("Player " + str(p) + " " + unit_name + " " + str(i) + ": " + str(ud2))
 
     print("\n*** extra data *** " + str(len(data) - pos))
     row = ""
