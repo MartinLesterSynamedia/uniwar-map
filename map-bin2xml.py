@@ -1,31 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import argparse
 import glob
 from struct import *
 from collections import namedtuple
+import xml.etree.cElementTree as ET
 
-
-def exractString(data, pos):
-    try:
-        length = 0
-        length = unpack('>H', data[pos:pos + 2])
-        length = length[0]
-    #    print("string length = " + str(length))
-        pos += 2
-        if length > 255:
-            text = "<Silly length>"
-        elif length > 0:
-            text = unpack('>' + str(length) + 's', data[pos:pos + length])
-            text = text[0]
-            text = text.decode()
-            pos += length
-        else:
-            text = "<BLANK>"
-    #    print(str(text))
-    except Exception as e:
-        text = str(text)
-        pos += length
-    return pos, text
 
 tilesetLookup = {
     0: "Plains",
@@ -59,129 +39,280 @@ unitLookup = {
     8: "Converted",
 }
 
+VERSION = 0
+WIDTH = 6
+HEIGHT = 7
+PLAYERS = 9
+TITLE = 14
+MAP_DATA = 31
 
-def parseFile(data):
-    # read data into a struct
-    #print (data)
-    print ("Data size = " + str(len(data)))
+fileTemplate = [
+    {"version": "UINT"},
+    {"unknown01": "UINT"},
+    {"unknown02": "UBYTE"},
+    {"unknown03": "UBYTE"},
+    {"unknown04": "UBYTE"},
+    {"unknown05": "UBYTE"},
+    {"width": "USHORT"},
+    {"height": "USHORT"},
+    {"mission": "USHORT"},
+    {"players": "UBYTE"},
+    {"start_credits": "UINT"},
+    {"base_credits": "USHORT"},
+    {"description": "STRING"},
+    {"v3_unknown": "V3INT"},
+    {"title": "STRING"},
+    {"unknown06": "UBYTE"},
+    {"tile_set": "tileSet"},
+    {"map_id": "UINT"},
+    {"unknown07": "INT"},
+    {"user_id_1": "INT"},
+    {"region_1": "STRING"},
+    {"username_1": "STRING"},
+    {"rating_1": "USHORT"},
+    {"unknown08": "USHORT"},
+    {"played": "USHORT"},
+    {"thumbup": "USHORT"},
+    {"thumbdown": "USHORT"},
+    {"user_id_2": "INT"},
+    {"username_2": "STRING"},
+    {"rating_2": "UINT"},
+    {"region_2": "STRING"},
+    {"map_data": "mapData"},
+    {"player_bases": "playerBases"},
+    {"padding": "padding"},
+    {"unit_data": "unitData"},
+    {"extra_data": "extraData"},
+]
 
-    map_data = namedtuple('map_data', 'version I1 b1 b2 b3 b4 width height mission players start_credits base_credits')
-    md = map_data._make(unpack('>IIBBBBHHHBIH', data[0:25]))
-    pos = 25
-    pos, desc = exractString(data, pos)
+type2byte = {
+    "UBYTE": [1, "B"],
+    "USHORT": [2, "H"],
+    "INT": [4, "i"],
+    "UINT": [4, "I"],
+}
 
-    width = md.width
-    height = md.height
 
-    if (md.version == 3):
-        i1 = unpack('>i', data[pos:pos + 4])
-        i1 = i1[0]
+def func_STRING(data, pos):
+    length = unpack('>H', data[pos:pos + 2])
+    length = length[0]
+    pos += 2
+
+    if length > 255:
+        text = "[Silly length]"
+    elif length > 0:
+        try:
+            text = unpack('>' + str(length) + 's', data[pos:pos + length])
+            text = text[0]
+            text = text.decode()
+        except:
+            text = str(text)
+        pos += length
+    else:
+        text = "[BLANK]"
+
+    return pos, text
+
+
+def func_tileSet(data, pos):
+    i = unpack('>B', data[pos:pos + 1])
+    i = i[0]
+    pos += 1
+    return pos, tilesetLookup.get(i, "** FIND OUT **")
+
+
+def func_V3INT(data, pos):
+    i = 0
+    version = fileTemplate[VERSION]["version"]
+    #print("Version is " + str(version))
+    if (version == 3):
+        i = unpack('>i', data[pos:pos + 4])
+        i = i[0]
         pos += 4
-        print("v3 only int = " + str(i1))  # always 0
+    return pos, i
 
-    pos, name = exractString(data, pos)
-    print ("Name = %s" % name)
-    print ("Description = %s" % desc)
-    print ("width = " + str(width) + ". Height = " + str(height))
 
-    print (md)
+def func_mapData(data, pos):
+    map_data = []
+    width = fileTemplate[WIDTH]["width"]
+    height = fileTemplate[HEIGHT]["height"]
 
-    map_data2 = namedtuple('map_data2', 'b1 tile_set map_id i1 userid1')
-    md2 = map_data2._make(unpack('>BBIii', data[pos:pos + 14]))
-    pos += 14
-    print(md2)
-
-    pos, region1 = exractString(data, pos)
-    print ("Region1: %s" % region1)
-    pos, username1 = exractString(data, pos)
-    print ("Username1: %s" % username1)
-
-    print ("Tile set: " + tilesetLookup.get(md2.tile_set, "** FIND OUT **"))
-
-    map_data3 = namedtuple('map_data3', 'rating1 s1 played up down userid2')
-    md3 = map_data3._make(unpack('>HHHHHi', data[pos:pos + 14]))
-    pos += 14
-    print(md3)
-    pos, username2 = exractString(data, pos)
-    print("username2 = " + username2)
-
-    map_data4 = namedtuple('map_data4', 'rating_int')
-    md4 = map_data4._make(unpack('>I', data[pos:pos + 4]))
-    pos += 4
-    print(md4)
-    pos, region2 = exractString(data, pos)
-    print ("Region2 = %s" % region2)
-
-    #### Map data
-    print("*** map ***")
+    #print("*** map ***")
     for y in range(0, height):
-        row = ""
+        row = []
         for x in range(0, width):
             byte = pos + (x * height) + y
             val = unpack('>b', data[byte])[0]
             tile = tileLookup.get(val, "?")
             row += tile
-        print(row)
-    pos += (x * height) + y + 1
+        #print(''.join(map(str, row)))
+        ## TODO: Get "Row' + y into this data so it appears in the XML
+        map_data.append(row)
 
-    for p in range(1, md.players + 1):
+    pos += (x * height) + y + 1
+    return pos, map_data
+
+
+def func_playerBases(data, pos):
+    players = fileTemplate[PLAYERS]["players"]
+
+    player_bases = {}
+    for p in range(1, players + 1):
         base_data = namedtuple('base_data', 'bases')
         bd = base_data._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
-        print("Player " + str(p) + " Bases/Ports: " + str(bd.bases))
+        player = "player" + str(p)
+        player_bases[player] = {"bases": bd.bases}
+        #print(player_bases)
         for i in range(1, bd.bases + 1):
-            base_data2 = namedtuple('base_data2', 'x y b1')
+            base_data2 = namedtuple('base_data2', 'x y z')
             bd2 = base_data2._make(unpack('>HHB', data[pos:pos + 5]))
             pos += 5
-            print("Player " + str(p) + " Base " + str(i) + ": " + str(bd2))
+            #print("Player " + str(p) + " Base " + str(i) + ": " + str(bd2))
+            base = "base" + str(i)
+            player_bases[player][base] = {'x': bd2.x, 'y': bd2.y, 'z': bd2.z}
 
+    #print(player_bases)
+    return pos, player_bases
+
+
+def func_padding(data, pos):
+    players = fileTemplate[PLAYERS]["players"]
+
+    padding = []
     ## Remove some random padding depending on number of players
-    for p in range(0, 8 - md.players):
-        unit_data = namedtuple('unit_data', 'S1')
-        unit_data._make(unpack('>H', data[pos:pos + 2]))
+    for p in range(0, 8 - players):
+        pad = namedtuple('pad', 'S1')
+        val = pad._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
+        padding += val
 
-    ## Unit data
-    for p in range(1, md.players + 1):
+    return pos, padding
+
+
+def func_unitData(data, pos):
+    players = fileTemplate[PLAYERS]["players"]
+
+    unit_data = {}
+    for p in range(1, players + 1):
         unit_data3 = namedtuple('unit_data3', 'unit_types')
         ud3 = unit_data3._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
-        print("Player " + str(p) + " " + str(ud3))
+        player = "player" + str(p)
+        unit_data[player] = {"unit_types": ud3.unit_types}
+        #print("Player " + str(p) + " " + str(ud3))
         for u in range(1, ud3.unit_types + 1):
             unit_data1 = namedtuple('unit_data1', 'unit_type units')
             ud1 = unit_data1._make(unpack('>HH', data[pos:pos + 4]))
             pos += 4
-            print("Player " + str(p) + " " + str(ud1))
-            unit_name = unitLookup.get(ud1.unit_type, "ERROR")
+            #print("Player " + str(p) + " " + str(ud1))
+
+            unit_type = unitLookup.get(ud1.unit_type, "ERROR")
+            unit_data[player][unit_type] = {"units": ud1.units}
+
             for i in range(1, ud1.units + 1):
-                unit_data2 = namedtuple('unit_data2', 'x y b1')
+                unit_data2 = namedtuple('unit_data2', 'x y z')
                 ud2 = unit_data2._make(unpack('>HHB', data[pos:pos + 5]))
                 pos += 5
-                print("Player " + str(p) + " " + unit_name + " " + str(i) + ": " + str(ud2))
+                unit = unit_type + str(i)
+                unit_data[player][unit_type][unit] = {'x': ud2.x, 'y': ud2.y, 'z': ud2.z}
+                #print("Player " + str(p) + " " + unit_name + " " + str(i) + ": " + str(ud2))
 
-    print("\n*** extra data *** " + str(len(data) - pos))
-    row = ""
+    return pos, unit_data
+
+
+def func_extraData(data, pos):
+    #print("\n*** extra " + str(len(data) - pos) + " bytes of data *** ")
+
+    row = []
     for i in range(pos, len(data)):
         val = unpack('>B', data[i])[0]
-        row += str(val)
-    print(row)
+        row.append(val)
+
+    return 0, row
 
 
-folder = "./map.bin.files/"
-maps = glob.glob(folder + "map*.bin")
+def parseFile(data):
+    functions = globals().copy()
+    functions.update(locals())
+    pos = 0
+    for i in range(0, len(fileTemplate)):
+        block = fileTemplate[i]
+        for variable in block:
+            data_type = block[variable]
+            dt = type2byte.get(data_type, "function")
+            if dt == "function":
+                func = "func_" + data_type
+                #print("Calling " + func)
+                func = functions.get(func)
+                pos, value = func(data, pos)
+                #print(variable + " => " + str(value))
+            else:
+                #print(dt)
+                value = unpack('>' + dt[1], data[pos:pos + dt[0]])
+                pos += dt[0]
+                value = value[0]
+                #print(variable + " => " + str(value))
+
+            ## Update the list with the value from the file
+            block[variable] = value
+    #print(fileTemplate)
+
+
+def generateXML(dest):
+    title = fileTemplate[TITLE]["title"]
+
+    root = ET.Element("map")
+    for i in range(0, len(fileTemplate)):
+        block = fileTemplate[i]
+        for variable in block:
+            value = block[variable]
+            if type(value).__name__ == 'dict' or type(value).__name__ == 'list':
+                ## TODO: Need to make this recursive
+                sub = ET.SubElement(root, variable)
+                i = 0
+                for sub_var in value:
+                    tag = variable + str(i)
+                    ET.SubElement(sub, tag).text = str(sub_var)
+                    i += 1
+            else:
+                ET.SubElement(root, variable).text = str(value)
+
+    tree = ET.ElementTree(root)
+    filename = title + ".xml"
+    tree.write(filename)
+    print("Generated " + filename)
+
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--source", type=str, required=True, help="uniwar map*.bin file. Wild cards permitted")
+parser.add_argument("-d", "--dest", type=str, default=".", help="Optional output folder")
+
+args = parser.parse_args()
+print (args)
+
+maps = glob.glob(args.source)
+
+if maps == 0:
+    print ("No maps found: " + args.source)
+    exit(0)
 
 for m in maps:
     f = open(m, 'rb')
     file_data = f.read()
-#    if len(file_data) > 450:
-#        continue
+
+    print ("\n*************\n" + m)
+
     try:
-        print ("\n*************\n" + m)
         parseFile(file_data)
     except Exception as e:
         print("Error parsing file " + m + ": " + str(e))
 
+    ## TODO: Merge player data together
 
-
-
+    generateXML(args.dest)
 
