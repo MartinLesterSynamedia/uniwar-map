@@ -16,7 +16,7 @@ tilesetLookup = {
 }
 
 tileLookup = {
-    0: ".",
+    0: " ",
     1: "_",
     2: "B",
     3: "F",
@@ -46,44 +46,49 @@ PLAYERS = 9
 TITLE = 14
 MAP_DATA = 31
 
-fileTemplate = [
-    {"version": "UINT"},
-    {"unknown01": "UINT"},
-    {"unknown02": "UBYTE"},
-    {"unknown03": "UBYTE"},
-    {"unknown04": "UBYTE"},
-    {"unknown05": "UBYTE"},
-    {"width": "USHORT"},
-    {"height": "USHORT"},
-    {"mission": "USHORT"},
-    {"players": "UBYTE"},
-    {"start_credits": "UINT"},
-    {"base_credits": "USHORT"},
-    {"description": "STRING"},
-    {"v3_unknown": "V3INT"},
-    {"title": "STRING"},
-    {"unknown06": "UBYTE"},
-    {"tile_set": "tileSet"},
-    {"map_id": "UINT"},
-    {"unknown07": "INT"},
-    {"user_id_1": "INT"},
-    {"region_1": "STRING"},
-    {"username_1": "STRING"},
-    {"rating_1": "USHORT"},
-    {"unknown08": "USHORT"},
-    {"played": "USHORT"},
-    {"thumbup": "USHORT"},
-    {"thumbdown": "USHORT"},
-    {"user_id_2": "INT"},
-    {"username_2": "STRING"},
-    {"rating_2": "UINT"},
-    {"region_2": "STRING"},
-    {"map_data": "mapData"},
-    {"player_bases": "playerBases"},
-    {"padding": "padding"},
-    {"unit_data": "unitData"},
-    {"extra_data": "extraData"},
-]
+fileTemplate = []
+
+
+def initFileTemplate():
+    global fileTemplate
+    fileTemplate = [
+        {"version": "UINT"},
+        {"unknown01": "UINT"},
+        {"unknown02": "UBYTE"},
+        {"unknown03": "UBYTE"},
+        {"unknown04": "UBYTE"},
+        {"unknown05": "UBYTE"},
+        {"width": "USHORT"},
+        {"height": "USHORT"},
+        {"mission": "USHORT"},
+        {"players": "UBYTE"},
+        {"start_credits": "UINT"},
+        {"base_credits": "USHORT"},
+        {"description": "STRING"},
+        {"v3_unknown": "V3INT"},
+        {"title": "STRING"},
+        {"unknown06": "UBYTE"},
+        {"tile_set": "tileSet"},
+        {"map_id": "UINT"},
+        {"unknown07": "INT"},
+        {"user_id_1": "INT"},
+        {"region_1": "STRING"},
+        {"username_1": "STRING"},
+        {"rating_1": "USHORT"},
+        {"unknown08": "USHORT"},
+        {"played": "USHORT"},
+        {"thumbup": "USHORT"},
+        {"thumbdown": "USHORT"},
+        {"user_id_2": "INT"},
+        {"username_2": "STRING"},
+        {"rating_2": "UINT"},
+        {"region_2": "STRING"},
+        {"map_data": "mapData"},
+        {"player_bases": "playerBases"},
+        {"padding": "padding"},
+        {"unit_data": "unitData"},
+        {"extra_data": "extraData"},
+    ]
 
 type2byte = {
     "UBYTE": [1, "B"],
@@ -133,11 +138,12 @@ def func_V3INT(data, pos):
 
 
 def func_mapData(data, pos):
-    map_data = []
+    map_data = {}
     width = fileTemplate[WIDTH]["width"]
     height = fileTemplate[HEIGHT]["height"]
 
     #print("*** map ***")
+    i = 0
     for y in range(0, height):
         row = []
         for x in range(0, width):
@@ -146,8 +152,8 @@ def func_mapData(data, pos):
             tile = tileLookup.get(val, "?")
             row += tile
         #print(''.join(map(str, row)))
-        ## TODO: Get "Row' + y into this data so it appears in the XML
-        map_data.append(row)
+        map_data.update({"row" + format(i, '02'): row})
+        i += 1
 
     pos += (x * height) + y + 1
     return pos, map_data
@@ -233,6 +239,8 @@ def func_extraData(data, pos):
 
 
 def parseFile(data):
+    global fileTemplate
+
     functions = globals().copy()
     functions.update(locals())
     pos = 0
@@ -259,7 +267,21 @@ def parseFile(data):
     #print(fileTemplate)
 
 
+def generateXmlRecurse(var, block, element):
+    if type(block).__name__ == 'dict':
+        sub = ET.SubElement(element, var)
+        #print(var)
+        for variable in sorted(block):
+            value = block[variable]
+            generateXmlRecurse(variable, value, sub)
+    else:
+        value = block
+        ET.SubElement(element, str(var)).text = str(value).strip('[]')
+        #print((str(element) + ": " + var + " => " + str(value)))
+
+
 def generateXML(dest):
+    dest = dest.rstrip('/')
     title = fileTemplate[TITLE]["title"]
 
     root = ET.Element("map")
@@ -267,21 +289,15 @@ def generateXML(dest):
         block = fileTemplate[i]
         for variable in block:
             value = block[variable]
-            if type(value).__name__ == 'dict' or type(value).__name__ == 'list':
-                ## TODO: Need to make this recursive
-                sub = ET.SubElement(root, variable)
-                i = 0
-                for sub_var in value:
-                    tag = variable + str(i)
-                    ET.SubElement(sub, tag).text = str(sub_var)
-                    i += 1
-            else:
-                ET.SubElement(root, variable).text = str(value)
+            value = generateXmlRecurse(variable, value, root)
 
     tree = ET.ElementTree(root)
-    filename = title + ".xml"
-    tree.write(filename)
-    print("Generated " + filename)
+    filename = dest + "/" + title + ".xml"
+    try:
+        tree.write(filename)
+        print(("Generated '" + filename + "'"))
+    except Exception as e:
+        print(("Error generating '" + filename + "' : " + str(e)))
 
 #################################################################################################
 #################################################################################################
@@ -293,7 +309,7 @@ parser.add_argument("-s", "--source", type=str, required=True, help="uniwar map*
 parser.add_argument("-d", "--dest", type=str, default=".", help="Optional output folder")
 
 args = parser.parse_args()
-print (args)
+#print (args)
 
 maps = glob.glob(args.source)
 
@@ -305,14 +321,13 @@ for m in maps:
     f = open(m, 'rb')
     file_data = f.read()
 
-    print ("\n*************\n" + m)
+    print ("**************************\n" + m)
 
+    initFileTemplate()
     try:
         parseFile(file_data)
     except Exception as e:
         print("Error parsing file " + m + ": " + str(e))
-
-    ## TODO: Merge player data together
 
     generateXML(args.dest)
 
