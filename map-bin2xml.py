@@ -167,7 +167,7 @@ def func_playerBases(data, pos):
         base_data = namedtuple('base_data', 'bases')
         bd = base_data._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
-        player = "player" + str(p)
+        player = "player" + format(p, '02')
         player_bases[player] = {"bases": bd.bases}
         #print(player_bases)
         for i in range(1, bd.bases + 1):
@@ -175,7 +175,7 @@ def func_playerBases(data, pos):
             bd2 = base_data2._make(unpack('>HHB', data[pos:pos + 5]))
             pos += 5
             #print("Player " + str(p) + " Base " + str(i) + ": " + str(bd2))
-            base = "base" + str(i)
+            base = "base" + format(i, '02')
             player_bases[player][base] = {'x': bd2.x, 'y': bd2.y, 'z': bd2.z}
 
     #print(player_bases)
@@ -204,7 +204,7 @@ def func_unitData(data, pos):
         unit_data3 = namedtuple('unit_data3', 'unit_types')
         ud3 = unit_data3._make(unpack('>H', data[pos:pos + 2]))
         pos += 2
-        player = "player" + str(p)
+        player = "player" + format(p, '02')
         unit_data[player] = {"unit_types": ud3.unit_types}
         #print("Player " + str(p) + " " + str(ud3))
         for u in range(1, ud3.unit_types + 1):
@@ -220,7 +220,7 @@ def func_unitData(data, pos):
                 unit_data2 = namedtuple('unit_data2', 'x y z')
                 ud2 = unit_data2._make(unpack('>HHB', data[pos:pos + 5]))
                 pos += 5
-                unit = unit_type + str(i)
+                unit = unit_type + format(i, '03')
                 unit_data[player][unit_type][unit] = {'x': ud2.x, 'y': ud2.y, 'z': ud2.z}
                 #print("Player " + str(p) + " " + unit_name + " " + str(i) + ": " + str(ud2))
 
@@ -229,7 +229,6 @@ def func_unitData(data, pos):
 
 def func_extraData(data, pos):
     #print("\n*** extra " + str(len(data) - pos) + " bytes of data *** ")
-
     row = []
     for i in range(pos, len(data)):
         val = unpack('>B', data[i])[0]
@@ -314,20 +313,20 @@ args = parser.parse_args()
 maps = glob.glob(args.source)
 
 if maps == 0:
-    print ("No maps found: " + args.source)
+    print(("No maps found: " + args.source))
     exit(0)
 
 for m in maps:
     f = open(m, 'rb')
     file_data = f.read()
 
-    print ("**************************\n" + m)
+    print(("**************************\n" + m))
 
     initFileTemplate()
     try:
         parseFile(file_data)
     except Exception as e:
-        print("Error parsing file " + m + ": " + str(e))
+        print(("Error parsing file " + m + ": " + str(e)))
 
     generateXML(args.dest)
 
