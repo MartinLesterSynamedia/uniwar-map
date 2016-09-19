@@ -2,3 +2,4 @@ map*.bin
 process.log*
 xml/
 *.xml
+*.pyc
