@@ -1,0 +1,63 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <title>UniWar | TILES Assets</title>
+    <script type="text/javascript">
+        var imagesText =
+                        "SAPIENS," +
+                        "sapien_base.png," + "sapien_harbor.png," +
+                        "marine.png," +
+                        "mecha_2.png," +
+                        "engineer.png," +
+                        "marauder.png," +
+                        "helicopter.png," +
+                        "tank.png," +
+                        "battery.png," +
+                        "destroyer.png," +
+                        "," +
+                        "TITANS," +
+                        "titan_base.png," + "titan_harbor.png," +
+                        "mecha.png," +
+                        "cyber_underling.png," +
+                        //"cyber_underling_buried.png," +
+                        "assimilator.png," +
+                        "speeder.png," +
+                        "eclipse.png," +
+                        "plasma_tank.png," +
+                        "walker.png," +
+                        "hydronaut.png," +
+                        "," +
+                        "KHRALEANS," +
+                        "khralean_base.png," + "khralean_harbor.png," +
+                        "underling.png," +
+                        //"underling_buried.png," +
+                        "infected_marine.png," +
+                        "infector.png," +
+                        "swarmer.png," +
+                        "garuda.png," +
+                        "pinzer.png," +
+                        "wyrm.png,"+
+                        "leviathan.png," +
+                        ","
+                ;
+        var images = imagesText.split(",");
+        var html = "Click on image to see them fullscreen<br>";
+        for (var i = 0; i < images.length; i++) {
+            var image = images[i];
+            if (image.length == 0) {
+                html += "<br>";
+            } else if (image.indexOf(".png") == -1) {
+                html += "<h3>" + image + "</h3>";
+            } else {
+                html += "<a href='" + image + "'><img width='112' height='auto' src='" + image + "'/></a>";
+            }
+        }
+        document.write(html);
+    </script>
+</head>
+<body bgcolor="#888"></body>
+</html>

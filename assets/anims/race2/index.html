@@ -1,0 +1,43 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <title>UniWar | TILES Assets</title>
+    <script type="text/javascript">
+        var imagesText =
+                        "idle_mecha.gif," +
+                        "attack_mecha.gif," +
+                        "idle_cyber_underling.gif," +
+                        "attack_cyber_underling.gif," +
+                        "idle_assimilator.gif," +
+                        "," +
+                        "idle_speeder.gif," +
+                        "attack_speeder.gif," +
+                        "idle_eclipse.gif," +
+                        "attack_eclipse.gif," +
+                        "idle_plasma_tank.gif," +
+                        "attack_plasma_tank.gif," +
+                        "idle_walker.gif," +
+                        "attack_walker.gif," +
+                        "idle_hydronaut.gif," +
+                        "attack_hydronaut.gif"
+                ;
+        var images = imagesText.split(",");
+        var html = "<h1>TITANS</h1>";
+        for (var i = 0; i < images.length; i++) {
+            html += "<table><tr><td valign='top'>";
+            html += "<table><tr><td>" + images[i].replace(".gif", "") + "</td></tr><tr><td><img src='" + images[i] + "'/></td></tr></table>";
+            html += "</td><td valign='top'>";
+            i++;
+            html += "<table><tr><td>" + images[i].replace(".gif", "") + "</td></tr><tr><td><img src='" + images[i] + "'/></td></tr></table>";
+            html += "</td></tr></table>";
+        }
+        html += "<table><tr><td>";
+        document.write(html);
+    </script>
+</head>
+<body bgcolor="#666"></body>
+</html>

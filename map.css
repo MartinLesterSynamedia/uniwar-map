@@ -1,0 +1,27 @@
+#map_area {
+    font-size: 0;
+}
+
+div.map_row {
+    width:          100%;
+    background:     gray;
+    margin:         0 auto;
+}
+
+div.map_cell {
+    background:      url("assets/tiles80/terrain0001.png");
+    padding:         40px 40px;
+    border:          solid black 1px;
+    display:         inline-block;
+}
+
+h1 {
+    color:    red;
+}
+
+polygon {
+    fill:            lime;
+    stroke:          black;
+    stroke-width:    2;
+    fill-rule:       evenodd;
+}

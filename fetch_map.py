@@ -1,6 +1,7 @@
 import bin2xml
 from bottle import *
 
+
 @route('/')
 @route('/info')
 @route('/map')
@@ -14,12 +15,9 @@ def info():
 
 @route('/map/<name>')
 def map(name):
-    return "Loading '%s'" % name
-
-
-@route('/map/test')
-def map(name):
-    return static_file("/raidstore/netbeans/uniwar-map/xml/EdTestairisland.xml", root='')
+    if name == 'test':
+        return static_file("EdTestairisland.xml", root='xml')
+    return static_file(name, root='xml')
 
 
 @route('/mapid/<id:int>')
@@ -29,6 +27,26 @@ def mapid(id):
     print (("Loading '" + xmlfile + "' ( " + binfile + " )"))
 
     return static_file(xmlfile, root='./')
+
+
+@route('/draw')
+def draw():
+    return static_file("map.html", root='./')
+
+
+@route('/css')
+def css():
+    return static_file("map.css", root='./')
+
+
+@route('/js')
+def js():
+    return static_file("map.js", root='./')
+
+
+@route('/assets/<path:path>')
+def assets(path):
+    return static_file(path, root='./assets/')
 
 
 run(host='localhost', port=8080, debug=True)

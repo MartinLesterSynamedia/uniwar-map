@@ -8,11 +8,11 @@ import xml.etree.cElementTree as ET
 
 
 tilesetLookup = {
-    0: "Plains",
-    1: "Ice",
+    0: "Spring",
+    1: "Winter",
     2: "Mars",
     3: "Volcano",
-    4: "Desert",
+    4: "Oasis",
 }
 
 tileLookup = {
