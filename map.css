@@ -3,15 +3,19 @@
 }
 
 div.map_row {
-    width:          100%;
-    background:     gray;
-    margin:         0 auto;
+    background:     #222244;
+}
+
+div.map_row_odd {
+    margin-left:    40px;
+    margin-top:     -20px;
+    margin-bottom:  -20px;
 }
 
 div.map_cell {
-    background:      url("assets/tiles80/terrain0001.png");
+    background:      #222244;
     padding:         40px 40px;
-    border:          solid black 1px;
+    border:          none;
     display:         inline-block;
 }
 

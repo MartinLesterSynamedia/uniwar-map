@@ -15,8 +15,7 @@ def info():
 
 @route('/map/<name>')
 def map(name):
-    if name == 'test':
-        return static_file("EdTestairisland.xml", root='xml')
+    name = name + ".xml"
     return static_file(name, root='xml')
 
 
