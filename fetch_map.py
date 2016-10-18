@@ -13,10 +13,19 @@ def info():
     text += "Use http://url:port/mapid/[map db id] to load a map by an id<br>"
 
 
+@route('/test')
+def test():
+    return static_file("map.html", root='./')
+
+
 @route('/map/<name>')
 def map(name):
-    name = name + ".xml"
-    return static_file(name, root='xml')
+    params = {
+        'js_url': url('/js'),
+        'css_url': url('/css'),
+        'name': name,
+    }
+    return template("map.tpl", params)
 
 
 @route('/mapid/<id:int>')
@@ -28,9 +37,10 @@ def mapid(id):
     return static_file(xmlfile, root='./')
 
 
-@route('/draw')
-def draw():
-    return static_file("map.html", root='./')
+@route('/xml/<name>')
+def xml(name):
+    name = name + ".xml"
+    return static_file(name, root='xml')
 
 
 @route('/css')

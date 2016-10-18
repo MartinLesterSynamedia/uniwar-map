@@ -301,31 +301,6 @@ def generateXML(dest):
     return filename
 
 
-def generateJSON(dest):
-    print (("Need to do it"))
-
-
-def common(output):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--source", type=str, required=True, help="uniwar map*.bin file. Wild cards permitted")
-    parser.add_argument("-d", "--dest", type=str, default=".", help="Optional output folder")
-
-    args = parser.parse_args()
-    #print (args)
-
-    maps = glob.glob(args.source)
-
-    if maps == 0:
-        print(("No maps found: " + args.source))
-        exit(0)
-
-    for m in maps:
-        if output == "json":
-            return bin2json(m, args.dest)
-        else:
-            return bin2xml(m, args.dest)
-
-
 def openFile(m):
     f = open(m, 'rb')
     file_data = f.read()
@@ -344,14 +319,24 @@ def bin2xml(file, dest="."):
     return generateXML(dest)
 
 
-def bin2json(file, dest="."):
-    openFile(file)
-    return generateJSON(dest)
-
 #################################################################################################
 #################################################################################################
 #################################################################################################
 #################################################################################################
 
 if __name__ == "__main__":
-    common("xml")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--source", type=str, required=True, help="uniwar map*.bin file. Wild cards permitted")
+    parser.add_argument("-d", "--dest", type=str, default=".", help="Optional output folder")
+
+    args = parser.parse_args()
+    #print (args)
+
+    maps = glob.glob(args.source)
+
+    if maps == 0:
+        print(("No maps found: " + args.source))
+        exit(0)
+
+    for m in maps:
+        bin2xml(m, args.dest)

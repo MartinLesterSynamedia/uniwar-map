@@ -1,9 +1,14 @@
+
 #map_area {
     font-size: 0;
+    background-image:  url("./assets/twinkling stars.gif");
+    background-repeat: repeat;
+    white-space: nowrap;
+    display:     table;
+    margin: auto;
 }
 
 div.map_row {
-    background:     #222244;
 }
 
 div.map_row_odd {
@@ -13,19 +18,11 @@ div.map_row_odd {
 }
 
 div.map_cell {
-    background:      #222244;
-    padding:         40px 40px;
-    border:          none;
-    display:         inline-block;
+    padding:           40px 40px;
+    border:            none;
+    display:           inline-block;
 }
 
 h1 {
-    color:    red;
-}
-
-polygon {
-    fill:            lime;
-    stroke:          black;
-    stroke-width:    2;
-    fill-rule:       evenodd;
+    text-align:    center;
 }
