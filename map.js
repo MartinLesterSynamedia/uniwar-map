@@ -40,9 +40,8 @@ function createMap( map_name ) {
 
             drawEmptyMap( width, height );
             loadTerrain( height, $xml );
-
-            removeBlankRows();
-            removeBlankCols();
+            loadBases( $xml );
+            loadUnits( $xml );
         },
 
         error: function (jqXHR, textStatus, errorThrown)
@@ -73,28 +72,100 @@ function loadTerrain( rows, $xml ) {
     var tile_set = $xml.find( "tile_set" ).text().toLowerCase();
     var $map_data = $xml.find( "map_data" );
 
-    for (row = 0; row < rows; row++) {
-        var row_id = "row";
-        if (row<10) {
-            row_id = row_id + "0";
-        }
-        row_id = row_id + row;
-        var row_data = $xml.find( row_id ).text();
+    $map_data.contents().each( function() {
+        var $this = $(this)
+        var row_data = $this.text();
         var x = 0;
 
         row_data.split(", ").forEach(function(tile) {
             // Strip the single quotes
-            tile = tile.substring(1, tile.length-1);
+            var tile = tile.substring(1, tile.length-1);
             if ($.trim(tile) != "") {
                 var terrain = terrain_lookup[tile];
-                var cellid = "#cell_" + x + "_" + row;
+                var cellid = "#cell_" + x + "_" + $this.index();
                 var $cell = $( cellid );
                 $cell.css("background-image", "url(/assets/tiles80/" + tile_set + "/" + terrain);
                 $cell.prop('title', cellid + '\ntile = ' + tile + '\nterrain = ' + terrain );
             }
             x = x + 1;
         });
-    }
+    });
+
+    removeBlankRows();
+    removeBlankCols();
+
+    adjustMapArea();
+}
+
+function loadBases( $xml ) {
+    var $base_data = $xml.find( "player_bases" );
+
+    $base_data.contents().each( function() {
+        var $player = $(this);
+        $player.contents().each( function() {
+            if (this.localName != "bases") {
+                var x = $(this).find("x").text();
+                var y = $(this).find("y").text();
+
+                var cellid = "#cell_" + x + "_" + y;
+                var $cell = $( cellid );
+                $cell.append('<img src="/assets/units80/sapien_base.' + $player.index() + '.png" />');
+                $cell.css('padding', '0px 0px');
+            }
+        });
+    });
+}
+
+function loadUnits( $xml ) {
+    var $unit_data = $xml.find( "unit_data" );
+
+    $unit_data.contents().each( function() {
+        var $player = $(this);
+        var player = $player.index();
+
+        $player.contents().each( function() {
+            var unit = "";
+            switch( this.localName ) {
+                case "Basic":
+                    unit = ["marine", "underling", "mecha"];
+                    break;
+                case "Medic":
+                    unit = ["engineer", "infector", "assimilator"];
+                    break;
+                case "Range":
+                    unit = ["battery", "wyrm", "walker"];
+                    break;
+                case "Tank":
+                    unit = ["tank", "pinzer", "plasma_tank"];
+                    break;
+                case "Light":
+                    unit = ["marauder", "swarmer", "speeder"];
+                    break;
+                case "Boat":
+                    unit = ["destroyer", "leviathan", "hydronaut"];
+                    break;
+                case "Medium":
+                    unit = ["helicopter", "garuda", "eclipse"];
+                    break;
+                case "Converted":
+                    unit = ["infected_marine", "cyber_underling", "mecha_2"];
+                    break;
+                default:
+                    return;
+            }
+
+            $(this).contents().each( function() {
+                var x = $(this).find("x").text();
+                var y = $(this).find("y").text();
+
+                var cellid = "#cell_" + x + "_" + y;
+                var $cell = $( cellid );
+                $player.index()
+                $cell.append('<img src="/assets/units80/' + unit[player % 3]  + '.' + player + '.png" />');
+                $cell.css('padding', '0px 0px');
+            });
+        });
+    });
 }
 
 /* Remove empty rows and columns starting from the edges.
@@ -154,4 +225,29 @@ function removeBlankCols() {
             $(".map_cell:last-child").remove();
         }
     }
+}
+
+
+function adjustMapArea() {
+    if ($(".map_row:first").hasClass("map_row_odd")) {
+        $("#map_area").css("padding-top", "40px");
+    }
+
+    if ($(".map_row:last").hasClass("map_row_odd")) {
+        $("#map_area").css("padding-bottom", "40px");
+    }
+
+    $(".map_row:not(.map_row_odd) > :first-child").each( function() {
+        if ( hasTerrain( this ) ) {
+            $("#map_area").css("padding-left", "25px");
+            return false;
+        }
+    });
+
+    $(".map_row_odd > :last-child").each( function() {
+        if ( hasTerrain( this ) ) {
+            $("#map_area").css("padding-right", "25px");
+            return false;
+        }
+    });
 }

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import bin2xml
 from bottle import *
 
